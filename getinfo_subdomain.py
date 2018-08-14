@@ -52,6 +52,7 @@ def printinfo(sublist):
             # 为requests请求添加http://
             subdo = "http://" + subdomain
             r = requests.get(subdo,timeout = 2)
+            content = r.content
 
             if r.status_code == 200:
                 # 可以成功进入的情况
@@ -73,6 +74,15 @@ def printinfo(sublist):
                     # 不为200时无任何信息时
                     data = str(r.status_code)
                     r.close()
+
+        except UnicodeDecodeError as UDE:
+            parser = subinfoParser()
+            parser.feed(r.content.decode("gbk"))
+            r.close()
+            data = parser.description
+        except requests.exceptions.ConnectTimeout as e:
+            #print(e)
+            data = "unreachable"
 
         except Exception as error:
             #print(error)
