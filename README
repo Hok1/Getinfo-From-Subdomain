@@ -1,0 +1,4 @@
+整理子域名列表后命名为subdomain.txt后放入此目录
+python3 getinfo_subdomain.py
+
+结果存放于result.xlsx
