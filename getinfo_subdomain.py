@@ -3,10 +3,16 @@ import requests
 import queue
 import threading
 import socket
+import getopt
+import sys
 
-threads = 15
-#outfile = open("./result.txt","a")
-count = 0
+def usage():
+    print("|  Usage:python3 getinfo_subdomain.py -o file [-选项 参数]")
+    print("|  -o --output                 -将结果输出到file")
+    print("|  -t --thread                 -设置运行线程")
+    print("|  -i --input                  -输入存有子域名列表的文件")
+    sys.exit(0)
+
 
 # 读取文件中域名
 def getsublist(subfile):
@@ -43,64 +49,93 @@ class subinfoParser(HTMLParser):
             self.description = data
             #print("des after is:" + self.description)
             self.flag += 1
-            
-# 写入文件
-def printinfo(sublist):
-    while not sublist.empty():
-        subdomain = sublist.get().rstrip()
-        try:
-            # 为requests请求添加http://
-            subdo = "http://" + subdomain
-            r = requests.get(subdo,timeout = 2)
-            content = r.content
 
-            if r.status_code == 200:
-                # 可以成功进入的情况
-                # 传入class解析html返回描述
+# 解析HTML返回data
+def getdata(subdomain):
+    try:
+        # 为requests请求添加http://
+        subdo = "http://" + subdomain
+        r = requests.get(subdo,timeout = 3)
+        status = r.status_code
+        content = r.content
+        r.close()
+
+        if status == 200:
+            # 可以成功进入的情况
+            # 传入class解析html返回描述
+            parser = subinfoParser()
+            parser.feed(content.decode("utf8"))
+            #print("准备打印:" + parser.description)
+            data = parser.description
+        else:
+            # 返回码不为200时
+            if content.decode("utf8") != "":
+                # 返回码不为200时如果有错误信息则收集
                 parser = subinfoParser()
-                parser.feed(r.content.decode("utf8"))
-                #print("准备打印:" + parser.description)
-                r.close()
+                parser.feed(content.decode("utf8"))
                 data = parser.description
             else:
-                # 返回码不为200时
-                if r.content.decode("utf8") != "":
-                    # 返回码不为200时如果有错误信息则收集
-                    parser = subinfoParser()
-                    parser.feed(r.content.decode("utf8"))
-                    r.close()
-                    data = parser.description
-                else:
-                    # 不为200时无任何信息时
-                    data = str(r.status_code)
-                    r.close()
+                # 不为200时无任何信息时
+                data = str(status)
 
-        except UnicodeDecodeError as UDE:
-            parser = subinfoParser()
-            parser.feed(r.content.decode("gbk"))
-            r.close()
-            data = parser.description
-        except requests.exceptions.ConnectTimeout as e:
-            #print(e)
-            data = "unreachable"
+    except UnicodeDecodeError as UDE:
+        parser = subinfoParser()
+        parser.feed(content.decode("gbk"))
+        data = parser.description
+    except requests.exceptions.ConnectTimeout as e:
+        #print(e)
+        data = "unreachable"
+    except Exception as error:
+        #print(error)
+        data = "unreachable"
+    
+    return data
 
-        except Exception as error:
-            #print(error)
-            data = "unreachable"
+
+# 写入文件
+def printinfo(sublist,filename):
+    while not sublist.empty():
+        subdomain = sublist.get().rstrip()
+        
+        data = getdata(subdomain)
 
         ip = socket.gethostbyname(subdomain)
         #print(subdomain + "\t\t" + ip + "\t\t" + data)
 
         # 此处每次打开文件会影响执行速度，暂时没想好如何改进
-        outfile = open("./result.xlsx","a")
+        outfile = open(filename,"a")
         outfile.write(subdomain + "\t\t" + ip + "\t\t" + data + "\n")
         outfile.close()
 
 
-if __name__ == "__main__":
+def main():
+    threads = 15
+    if not len(sys.argv[1:]):
+        usage()
+
+    try:
+        opts,args = getopt.getopt(sys.argv[1:],"o:t:i:",["output","thread","input"])
+    except Exception as e:
+        print(e)
+        usage()
+
+    for o,a in opts:
+        if o in ("-o","--output"):
+            outfilename = a
+        elif o in ("-t","--thread"):
+            threads = int(a)
+        elif o in ("-i","--input"):
+            inputfilename = a
+        else:
+            assert False,"无法处理的参数"
     
-    sublist,count = getsublist("subdomain.txt")
+
+    sublist,count = getsublist(inputfilename)
     for i in range(threads):
-        t = threading.Thread(target=printinfo,args=(sublist,))
+        t = threading.Thread(target=printinfo,args=(sublist,outfilename))
         t.start()
-    print("正在记录{}个子域名以及相关信息，请稍等...".format(count))    
+    print("正在记录{}个子域名以及相关信息到{}，请稍等...".format(count,outfilename))
+
+
+if __name__ == "__main__":    
+    main()
