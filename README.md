@@ -1,22 +1,24 @@
-用途：
-	用于收集子域名后的信息收集。收集信息后输出到文档，形式如下：
-	域名	IP	信息
-eg:
-	www.baidu.com	***.**.**.***	百度首页
-	v.baidu.com	***.**.**.***	百度视频
-用法：
-	python3 getinfo_subdomain.py -o 输出文件名
-eg:
-	python3 getinfo_subdomain.py -o result.txt
+###用途：
+>用于收集子域名后的信息收集。收集信息后输出到文档。
+###用法：
+```
+python3 getinfo_subdomain.py -o 输出文件名
+```
 
-more details:
-	python3 getinfo_subdomain.py
+###eg:
+```
+python3 getinfo_subdomain.py -o result.txt
+```
 
+###more details:
+```
+python3 getinfo_subdomain.py
+```
 
-v1.1----
-v1.2----
+##v1.1----
+##v1.2----
 	解决了有关编码错误导致无法获取信息的问题
-v1.3----
+##v1.3----
 	增加了参数，使输入输出更灵活,无参数输入则显示用法
 
 输入效果
