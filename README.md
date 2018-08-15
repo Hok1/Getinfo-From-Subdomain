@@ -17,12 +17,15 @@ python3 getinfo_subdomain.py -o result.txt
 python3 getinfo_subdomain.py
 ```
 
-# v1.1----
-# v1.2----
->>>解决了有关编码错误导致无法获取信息的问题
+# version
+### v1.1----
+### v1.2----
+>解决了有关编码错误导致无法获取信息的问题
 
-# v1.3----
->>>增加了参数，使输入输出更灵活,无参数输入则显示用法
+### v1.3----
+>增加了参数，使输入输出更灵活,无参数输入则显示用法
+
+
 
 # 输入效果
 ![pic](https://wx1.sinaimg.cn/mw690/86146a5fly1fu9v2hf61kj205r064a9y.jpg)
