@@ -52,58 +52,44 @@ class subinfoParser(HTMLParser):
 
 # 解析HTML返回data
 def getdata(subdomain):
-    datalist = []
-    # 此处两次requests提高准确性
-    for i in range(2):
-        try:
-            # 为requests请求添加http://
-            subdo = "http://" + subdomain
-            r = requests.get(subdo,timeout = 3)
-            status = r.status_code
-            content = r.content
-            r.close()
+    try:
+        # 为requests请求添加http://
+        subdo = "http://" + subdomain
+        r = requests.get(subdo,timeout = 3)
+        status = r.status_code
+        content = r.content
+        r.close()
 
-            if status == 200:
-                # 可以成功进入的情况
-                # 传入class解析html返回描述
+        if status == 200:
+            # 可以成功进入的情况
+            # 传入class解析html返回描述
+            parser = subinfoParser()
+            parser.feed(content.decode("utf8"))
+            #print("准备打印:" + parser.description)
+            data = parser.description
+        else:
+            # 返回码不为200时
+            if content.decode("utf8") != "":
+                # 返回码不为200时如果有错误信息则收集
                 parser = subinfoParser()
                 parser.feed(content.decode("utf8"))
-                #print("准备打印:" + parser.description)
                 data = parser.description
-                datalist.append(data)
             else:
-                # 返回码不为200时
-                if content.decode("utf8") != "":
-                    # 返回码不为200时如果有错误信息则收集
-                    parser = subinfoParser()
-                    parser.feed(content.decode("utf8"))
-                    data = parser.description
-                    datalist.append(data)
-                else:
-                    # 不为200时无任何信息时
-                    data = str(status)
-                    datalist.append(data)
+                # 不为200时无任何信息时
+                data = str(status)
 
-        except UnicodeDecodeError as UDE:
-            parser = subinfoParser()
-            parser.feed(content.decode("gbk"))
-            data = parser.description
-            datalist.append(data)
-        except requests.exceptions.ConnectTimeout as e:
-            #print(e)
-            data = "unreachable"
-            datalist.append(data)
-        except Exception as error:
-            #print(error)
-            data = "unreachable"
-            datalist.append(data)
-
-    for d in datalist:
-        #print(d)
-        if d != "unreachable":
-            return d
-        
-    return "unreachable"
+    except UnicodeDecodeError as UDE:
+        parser = subinfoParser()
+        parser.feed(content.decode("gbk"))
+        data = parser.description
+    except requests.exceptions.ConnectTimeout as e:
+        #print(e)
+        data = "unreachable"
+    except Exception as error:
+        #print(error)
+        data = "unreachable"
+    
+    return data
 
 
 # 写入文件
