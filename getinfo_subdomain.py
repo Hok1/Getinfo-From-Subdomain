@@ -101,7 +101,7 @@ def getdata(subdomain):
     for d in datalist:
         #print(d)
         if d != "unreachable":
-            return d
+            return d.strip()
         
     return "unreachable"
 

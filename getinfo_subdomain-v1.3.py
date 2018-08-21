@@ -89,7 +89,7 @@ def getdata(subdomain):
         #print(error)
         data = "unreachable"
     
-    return data
+    return data.strip()
 
 
 # 写入文件
