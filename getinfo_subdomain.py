@@ -72,16 +72,16 @@ def getdata(subdomain):
                 data = parser.description
                 datalist.append(data)
             else:
-                # 返回码不为200时
-                if content.decode("utf8") != "":
-                    # 返回码不为200时如果有错误信息则收集
-                    parser = subinfoParser()
-                    parser.feed(content.decode("utf8"))
-                    data = parser.description
-                    datalist.append(data)
-                else:
+                # 返回码不为200时如果有错误信息则收集
+                parser = subinfoParser()
+                parser.feed(content.decode("utf8"))
+                data = parser.description
+                #datalist.append(data)
+                if data == "":
                     # 不为200时无任何信息时
                     data = str(status)
+                    datalist.append(data)
+                else:
                     datalist.append(data)
 
         except UnicodeDecodeError as UDE:
