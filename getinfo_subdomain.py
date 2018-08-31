@@ -1,4 +1,5 @@
-from html.parser import HTMLParser
+import html.parser
+from bs4 import BeautifulSoup
 import requests
 import queue
 import threading
@@ -7,12 +8,17 @@ import getopt
 import sys
 
 def usage():
+    print("\033[1;34m")
+
+    print("*" * 60)
     print("|  Usage:python3 getinfo_subdomain.py -o file [-选项 参数]")
     print("|  -o --output                 -将结果输出到file")
     print("|  -t --thread                 -设置运行线程")
     print("|  -i --input                  -输入存有子域名列表的文件")
-    sys.exit(0)
+    print("*" * 60)
 
+    print("\033[0m")
+    sys.exit(0)
 
 # 读取文件中域名
 def getsublist(subfile):
@@ -28,28 +34,6 @@ def getsublist(subfile):
     #print(insize)
     return sublist,sublist.qsize()
 
-
-# 解析html
-class subinfoParser(HTMLParser):
-
-    description = ""
-    flag = 1
-    def handle_data(self, data):
-        """
-        recognize data, html content string
-        :param data:
-        :return:
-        """
-        # print(self.lasttag)
-        # lasttag 不管结束标签还是开始标签均相同，所以此处设置flag防止多算
-        # 前一标签为title时，取出内容
-        if self.lasttag == 'title' and self.flag == 1:
-            #print("data is :" + data)
-            #print("des before is:" + self.description)
-            self.description = data
-            #print("des after is:" + self.description)
-            self.flag += 1
-
 # 解析HTML返回data
 def getdata(subdomain):
     datalist = []
@@ -58,43 +42,59 @@ def getdata(subdomain):
         try:
             # 为requests请求添加http://
             subdo = "http://" + subdomain
-            r = requests.get(subdo,timeout = 3)
+            r = requests.get(subdo,timeout=4)
             status = r.status_code
             content = r.content
             r.close()
 
             if status == 200:
                 # 可以成功进入的情况
-                # 传入class解析html返回描述
-                parser = subinfoParser()
-                parser.feed(content.decode("utf8"))
-                #print("准备打印:" + parser.description)
-                data = parser.description
+                # 解析html返回描述
+                soup = BeautifulSoup(content.decode("utf8"),"html.parser")
+                if str(soup.title) == "None":
+                    data = ""
+                else:
+                    data = str(soup.title.string)
                 datalist.append(data)
             else:
                 # 返回码不为200时如果有错误信息则收集
-                parser = subinfoParser()
-                parser.feed(content.decode("utf8"))
-                data = parser.description
-                #datalist.append(data)
-                if data == "":
+                soup = BeautifulSoup(content.decode("utf8"),"html.parser")
+
+                if str(soup.title) == "None":
                     # 不为200时无任何信息时
                     data = str(status)
                     datalist.append(data)
                 else:
+                    data = str(soup.title.string)
                     datalist.append(data)
 
         except UnicodeDecodeError as UDE:
-            parser = subinfoParser()
-            parser.feed(content.decode("gbk"))
-            data = parser.description
+            soup = BeautifulSoup(content.decode("gbk"),"html.parser")
+            data = str(soup.title.string)
             datalist.append(data)
+
         except requests.exceptions.ConnectTimeout as e:
-            #print(e)
             data = "unreachable"
             datalist.append(data)
+        
+        except requests.exceptions.ConnectionError as cs:
+            data = "unreachable"
+            datalist.append(data)
+        
+        except requests.exceptions.TooManyRedirects as too:
+            data = "unreachable"
+            datalist.append(data)
+
+        except requests.exceptions.SSLError as ssl:
+            data = "证书错误"
+            datalist.append(data)
+
         except Exception as error:
-            #print(error)
+            print("\033[1;34m")
+            print(subdo)
+            print(error)
+            print("\033[0m")
+
             data = "unreachable"
             datalist.append(data)
 
@@ -149,8 +149,9 @@ def main():
     for i in range(threads):
         t = threading.Thread(target=printinfo,args=(sublist,outfilename))
         t.start()
+    print("\033[1;34m")
     print("正在记录{}个子域名以及相关信息到{}，请稍等...".format(count,outfilename))
-
+    print("\033[0m")
 
 if __name__ == "__main__":    
     main()
